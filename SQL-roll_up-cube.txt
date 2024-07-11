@@ -1,0 +1,102 @@
+pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", None)
+------------------------------------------------------------------------------------
+
+query = """
+SELECT 
+    year,
+    SUM(CASE WHEN region = 'IDF' THEN population END) AS IDF_population,
+    SUM(population) AS total_population,
+    SUM(CASE WHEN region = 'IDF' THEN population END) / SUM(population) AS IDF_ratio
+FROM 
+    dpts_dfs
+GROUP BY 
+    year;
+"""
+duckdb.sql(query).df()
+--------------------------------------
+query = """
+SELECT 
+    year,
+    region,
+    SUM(population) AS region_pop,
+    SUM(SUM(population)) OVER (PARTITION BY year) AS total_population,
+    region_pop / total_population AS region_ratio
+FROM 
+    dpts_dfs
+GROUP BY 
+    year, region
+ORDER BY
+    year, region
+"""
+duckdb.sql(query).df()
+
+
+------------------------------------------
+GROUP BY ROLLUP :
+query = """
+SELECT year, region, departement, 
+SUM(population),
+FROM dpts_dfs
+GROUP BY ROLLUP (year, region, departement)
+HAVING year NOT NULL
+ORDER BY year, region, departement
+"""
+duckdb.sql(query).df()
+
+---------------------------------
+GROUP BY CUBE :
+query = """
+SELECT year, region, departement, 
+SUM(population),
+FROM dpts_dfs
+GROUP BY ROLLUP (year, region, departement)
+HAVING year NOT NULL
+ORDER BY year, region, departement
+"""
+duckdb.sql(query).df()
+
+----------------------------------------------
+
+Je veux la somme des montants remboursés par: type_contrat / type_acte / groupe_age / sexe / annee
+et je veux avoir les chiffres globaux pour chacune de ces sous-catégories:
+type_contrat / type_acte / groupe_age / sexe /
+type_contrat / type_acte / groupe_age /
+type_contrat / type_acte /
+type_contrat /
+
+
+query = """
+SELECT type_contrat, type_acte, groupe_age, sexe, annee,
+SUM(montant_rembourse) 
+FROM df
+GROUP BY ROLLUP
+( type_contrat, type_acte, groupe_age, sexe, annee )
+ORDER BY type_contrat, type_acte, groupe_age, sexe, annee 
+"""
+duckdb.sql(query).df()
+
+---------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
